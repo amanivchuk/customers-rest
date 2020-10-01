@@ -5,6 +5,8 @@ import com.manivchuk.customers.service.CustomerService;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -26,6 +28,13 @@ public class CustomerController {
     @ResponseStatus(HttpStatus.OK)
     public List<Customer> findAll() {
         return customerService.findAll();
+    }
+
+    @GetMapping("/customers/page/{page}")
+    @ResponseStatus(HttpStatus.OK)
+    public Page<Customer> findAll(@PathVariable Integer page) {
+        PageRequest pageable = PageRequest.of(page, 4);
+        return customerService.findAll(pageable);
     }
 
     @GetMapping("/customers/{id}")
