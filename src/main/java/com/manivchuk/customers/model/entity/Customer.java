@@ -1,6 +1,5 @@
 package com.manivchuk.customers.model.entity;
 
-import com.sun.istack.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,6 +8,7 @@ import lombok.Setter;
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Date;
@@ -18,7 +18,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "cutomers")
+@Table(name = "customers")
 public class Customer implements Serializable {
 
     @Id
@@ -38,12 +38,15 @@ public class Customer implements Serializable {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @NotNull(message="date can't be empty")
     @Temporal(TemporalType.DATE)
     private Date createdAt;
 
+    private String photo;
+
     private static final long serialVersionUID = 1L;
 
-    @PrePersist
+//    @PrePersist
     public void prePersist(){
         createdAt = new Date();
     }
