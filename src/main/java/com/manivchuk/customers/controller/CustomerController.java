@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -48,6 +49,7 @@ public class CustomerController {
         return customerService.findAll(pageable);
     }
 
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
     @GetMapping("/customers/{id}")
     public ResponseEntity<?> find(@PathVariable Long id) {
         Customer customer = null;
@@ -69,6 +71,7 @@ public class CustomerController {
         return new ResponseEntity<Customer>(customer, HttpStatus.OK);
     }
 
+    @Secured({"ROLE_ADMIN"})
     @PostMapping("/customers")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> add(@Valid @RequestBody Customer customer, BindingResult result) {
@@ -98,6 +101,7 @@ public class CustomerController {
         return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
     }
 
+    @Secured({"ROLE_ADMIN"})
     @PutMapping("/customers/{id}")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<?> update(@Valid @RequestBody Customer customer, @PathVariable Long id, BindingResult result) {
@@ -138,6 +142,7 @@ public class CustomerController {
         return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
     }
 
+    @Secured({"ROLE_ADMIN"})
     @DeleteMapping("/customers/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public ResponseEntity<?> delete(@PathVariable Long id) {
@@ -159,6 +164,7 @@ public class CustomerController {
         return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
     }
 
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
     @PostMapping("/customers/upload")
     public ResponseEntity<?> upload(@RequestParam("photo") MultipartFile photo, @RequestParam("id") Long id) {
         Map<String, Object> response = new HashMap<>();
@@ -190,6 +196,7 @@ public class CustomerController {
         return new ResponseEntity<Map<String, Object>>(response,HttpStatus.CREATED);
 }
 
+    @Secured({"ROLE_ADMIN", "ROLE_USER"})
     @GetMapping("/customers/upload/img/{fileName:.+}")
     public ResponseEntity<Resource> verPhoto(@PathVariable String fileName) {
 
@@ -207,6 +214,7 @@ public class CustomerController {
         return new ResponseEntity<Resource>(resource, headers, HttpStatus.OK);
     }
 
+    @Secured({"ROLE_ADMIN"})
     @GetMapping("/customers/regions")
     public List<Region> regionList(){
         return customerService.findAllRegions();
