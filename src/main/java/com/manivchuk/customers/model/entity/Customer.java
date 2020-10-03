@@ -1,5 +1,8 @@
 package com.manivchuk.customers.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.manivchuk.customers.controller.Region;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,6 +46,14 @@ public class Customer implements Serializable {
     private Date createdAt;
 
     private String photo;
+
+    @NotNull(message = "Region can't be null")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "region_id")
+//    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+//    @JsonIgnore
+    @JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"})
+    private Region region;
 
     private static final long serialVersionUID = 1L;
 

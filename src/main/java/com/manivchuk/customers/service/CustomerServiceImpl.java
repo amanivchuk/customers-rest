@@ -1,5 +1,6 @@
 package com.manivchuk.customers.service;
 
+import com.manivchuk.customers.controller.Region;
 import com.manivchuk.customers.model.entity.Customer;
 import com.manivchuk.customers.model.repository.CustomerRepository;
 import lombok.Setter;
@@ -43,5 +44,11 @@ public class CustomerServiceImpl implements CustomerService{
     @Override
     public void delete(Long id) {
         customerRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Region> findAllRegions() {
+        return customerRepository.findAllRegions();
     }
 }

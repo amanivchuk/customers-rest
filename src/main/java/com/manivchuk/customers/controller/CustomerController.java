@@ -2,10 +2,12 @@ package com.manivchuk.customers.controller;
 
 import com.manivchuk.customers.model.entity.Customer;
 import com.manivchuk.customers.service.CustomerService;
+import com.manivchuk.customers.service.UploadFileService;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,23 +19,21 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
-//@CrossOrigin(origins = {"http://localhost:4200"})
+@CrossOrigin(origins = {"http://localhost:4200"})
 @RestController
 @RequestMapping("/api")
 @Setter(onMethod_ = @Autowired)
 public class CustomerController {
 
     private CustomerService customerService;
+    private UploadFileService uploadFileService;
+
+    private final Logger log = LoggerFactory.getLogger(CustomerController.class);
 
     @GetMapping("/customers")
     @ResponseStatus(HttpStatus.OK)
@@ -76,7 +76,7 @@ public class CustomerController {
         Customer newCustomer = null;
         Map<String, Object> response = new HashMap<>();
 
-        if(result.hasErrors()){
+        if (result.hasErrors()) {
             List<String> errors = result.getFieldErrors().stream()
                     .map(err -> "Field '" + err.getField() + "' " + err.getDefaultMessage())
                     .collect(Collectors.toList());
@@ -105,7 +105,7 @@ public class CustomerController {
         Customer updatedCustomer = null;
         Map<String, Object> response = new HashMap<>();
 
-        if(result.hasErrors()){
+        if (result.hasErrors()) {
             List<String> errors = result.getFieldErrors().stream()
                     .map(err -> "Field '" + err.getField() + "' " + err.getDefaultMessage())
                     .collect(Collectors.toList());
@@ -123,6 +123,8 @@ public class CustomerController {
             customerActual.setFirstName(customer.getFirstName());
             customerActual.setLastName(customer.getLastName());
             customerActual.setEmail(customer.getEmail());
+            customerActual.setCreatedAt(customer.getCreatedAt());
+            customerActual.setRegion(customer.getRegion());
             updatedCustomer = customerService.add(customerActual);
         } catch (DataAccessException e) {
             response.put("message", "Database not available");
@@ -144,14 +146,7 @@ public class CustomerController {
             Customer customer = customerService.findById(id);
             String previousNamePhoto = customer.getPhoto();
 
-            if(previousNamePhoto != null && previousNamePhoto.length() > 0){
-                Path previousPathPhoto = Paths.get("uploads").resolve(previousNamePhoto).toAbsolutePath();
-                File previousFilePhoto = previousPathPhoto.toFile();
-                if(previousFilePhoto.exists() && previousFilePhoto.canRead()){
-                    previousFilePhoto.delete();
-                }
-            }
-
+            uploadFileService.remove(previousNamePhoto);
 
             customerService.delete(id);
         } catch (DataAccessException e) {
@@ -161,66 +156,59 @@ public class CustomerController {
         }
         response.put("message", "Customer deleted");
 
-        return new ResponseEntity<Map<String,Object>>(response, HttpStatus.OK);
+        return new ResponseEntity<Map<String, Object>>(response, HttpStatus.OK);
     }
 
     @PostMapping("/customers/upload")
-    public ResponseEntity<?> upload(@RequestParam("archive") MultipartFile archive, @RequestParam("id") Long id){
+    public ResponseEntity<?> upload(@RequestParam("photo") MultipartFile photo, @RequestParam("id") Long id) {
         Map<String, Object> response = new HashMap<>();
 
         Customer customer = customerService.findById(id);
 
-        if(!archive.isEmpty()){
-            String archiveName = UUID.randomUUID().toString() + "_" + archive.getOriginalFilename().replace(" ", "");
-            Path rootArchive = Paths.get("uploads").resolve(archiveName).toAbsolutePath();
-
+        String fileName = null;
+        if (!photo.isEmpty()) {
             try {
-                Files.copy(archive.getInputStream(), rootArchive, StandardCopyOption.REPLACE_EXISTING);
+                fileName = uploadFileService.copy(photo);
             } catch (IOException e) {
-                response.put("message", "Error upload photo " + archiveName);
-                response.put("errors", e.getMessage().concat(": ").concat(e.getCause().getMessage()));
+                response.put("message", "Error copy file on server ");
+                response.put("error", e.getMessage().concat(": ").concat(e.getCause().getMessage()));
                 return new ResponseEntity<Map<String, Object>>(response, HttpStatus.INTERNAL_SERVER_ERROR);
             }
-
-            String previousNamePhoto = customer.getPhoto();
-
-            if(previousNamePhoto != null && previousNamePhoto.length() > 0){
-                Path previousPathPhoto = Paths.get("uploads").resolve(previousNamePhoto).toAbsolutePath();
-                File previousFilePhoto = previousPathPhoto.toFile();
-                if(previousFilePhoto.exists() && previousFilePhoto.canRead()){
-                    previousFilePhoto.delete();
-                }
-            }
-
-            customer.setPhoto(archiveName);
-
-            customerService.add(customer);
-
-            response.put("customer", customer);
-            response.put("message", "Upload photo " + archiveName);
         }
 
-        return new ResponseEntity<Map<String, Object>>(response, HttpStatus.CREATED);
-    }
+        String previousNamePhoto = customer.getPhoto();
 
-    @GetMapping("/upload/img/{fileName:.+}")
-    public ResponseEntity<Resource> verPhoto(@PathVariable String fileName){
+        uploadFileService.remove(previousNamePhoto);
 
-        Path filePath = Paths.get("uploads").resolve(fileName).toAbsolutePath();
+        customer.setPhoto(fileName);
+
+        customerService.add(customer);
+
+        response.put("customer", customer);
+        response.put("message", "Upload photo " + fileName);
+
+        return new ResponseEntity<Map<String, Object>>(response,HttpStatus.CREATED);
+}
+
+    @GetMapping("/customers/upload/img/{fileName:.+}")
+    public ResponseEntity<Resource> verPhoto(@PathVariable String fileName) {
+
         Resource resource = null;
 
         try {
-            resource = new UrlResource(filePath.toUri());
+            resource = uploadFileService.load(fileName);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
 
-        if(!resource.exists() && !resource.isReadable()){
-            throw new RuntimeException("Error load image: "+ fileName);
-        }
         HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+ resource.getFilename() + "\"");
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"");
 
         return new ResponseEntity<Resource>(resource, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/customers/regions")
+    public List<Region> regionList(){
+        return customerService.findAllRegions();
     }
 }

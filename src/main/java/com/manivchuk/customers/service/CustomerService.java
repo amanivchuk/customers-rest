@@ -1,5 +1,6 @@
 package com.manivchuk.customers.service;
 
+import com.manivchuk.customers.controller.Region;
 import com.manivchuk.customers.model.entity.Customer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,4 +18,6 @@ public interface CustomerService {
     Customer add(Customer customer);
 
     void delete(Long id);
+
+    List<Region> findAllRegions();
 }
