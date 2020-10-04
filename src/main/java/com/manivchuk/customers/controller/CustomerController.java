@@ -196,7 +196,7 @@ public class CustomerController {
         return new ResponseEntity<Map<String, Object>>(response,HttpStatus.CREATED);
 }
 
-    @Secured({"ROLE_ADMIN", "ROLE_USER"})
+//    @Secured({"ROLE_ADMIN", "ROLE_USER"})
     @GetMapping("/customers/upload/img/{fileName:.+}")
     public ResponseEntity<Resource> verPhoto(@PathVariable String fileName) {
 
