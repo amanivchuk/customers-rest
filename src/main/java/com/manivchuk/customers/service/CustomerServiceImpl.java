@@ -2,7 +2,11 @@ package com.manivchuk.customers.service;
 
 import com.manivchuk.customers.controller.Region;
 import com.manivchuk.customers.model.entity.Customer;
+import com.manivchuk.customers.model.entity.bill.Bill;
+import com.manivchuk.customers.model.entity.product.Product;
+import com.manivchuk.customers.model.repository.BillRepository;
 import com.manivchuk.customers.model.repository.CustomerRepository;
+import com.manivchuk.customers.model.repository.ProductRepository;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -18,6 +22,8 @@ import java.util.List;
 public class CustomerServiceImpl implements CustomerService{
 
     private CustomerRepository customerRepository;
+    private BillRepository billRepository;
+    private ProductRepository productRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -50,5 +56,28 @@ public class CustomerServiceImpl implements CustomerService{
     @Transactional(readOnly = true)
     public List<Region> findAllRegions() {
         return customerRepository.findAllRegions();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Bill findBillById(Long id) {
+        return billRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public Bill saveBill(Bill bill) {
+        return billRepository.save(bill);
+    }
+
+    @Override
+    public void deleteBillBuId(Long id) {
+        billRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Product> findProductByName(String name) {
+        return productRepository.findByName(name);
     }
 }
