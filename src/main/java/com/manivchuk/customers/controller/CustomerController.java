@@ -25,7 +25,7 @@ import java.net.MalformedURLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = {"http://localhost:4200"})
+@CrossOrigin(origins = {"http://localhost:4200", "*"})
 @RestController
 @RequestMapping("/api")
 @Setter(onMethod_ = @Autowired)
